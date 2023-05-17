@@ -34,6 +34,9 @@ def main(args):
     GPT_class = None
     extra_kwargs = {}
 
+    if args.model_type == "None":
+        args.model_type = None
+
     if args.implementation == "mingpt":
         GPT_class = models.MinGPT
         extra_kwargs.update(
