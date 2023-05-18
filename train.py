@@ -1,6 +1,7 @@
 import os
 from argparse import ArgumentParser
 from urllib.request import urlopen
+from urllib.error import URLError
 
 import lightning as L
 import torch
@@ -9,14 +10,23 @@ from torch.utils.data import DataLoader
 from lightning_gpt import callbacks, data, models
 
 
+FILENAME = "shakespeare_input.txt"
+URL = f"https://cs.stanford.edu/people/karpathy/char-rnn/{FILENAME}"
+
+
 def main(args):
 
-    if os.path.exists("shakespeare_input.txt"):
-        with open("shakespeare_input.txt", "r") as f:
-            text = f.read()
-    else:
-        with urlopen("https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt") as f:
-            text = f.read()
+    try:
+        if os.path.exists(FILENAME):
+            with open(FILENAME, "r") as f:
+                text = f.read()
+        else:
+            with urlopen(URL) as f:
+                text = f.read()
+    except URLError as e:
+        print(f"Unable to retrieve file from the URL: {URL}. Error: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
 
     train_dataset = data.CharDataset(text, args.block_size)
 
