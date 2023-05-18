@@ -1,3 +1,4 @@
+import os
 from argparse import ArgumentParser
 from urllib.request import urlopen
 
@@ -9,8 +10,13 @@ from lightning_gpt import callbacks, data, models
 
 
 def main(args):
-    with urlopen("https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt") as f:
-        text = f.read()
+
+    if os.path.exists("shakespeare_input.txt"):
+        with open("shakespeare_input.txt", "r") as f:
+            text = f.read()
+    else:
+        with urlopen("https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt") as f:
+            text = f.read()
 
     train_dataset = data.CharDataset(text, args.block_size)
 
