@@ -115,9 +115,6 @@ if __name__ == "__main__":
     parser.add_argument("--num_workers", default=4, type=int)
     parser.add_argument("--compile", default=None, choices=[None, "dynamo"])
     parser.add_argument("--implementation", default="mingpt", choices=["mingpt", "nanogpt"])
-    parser.add_argument("--precision", default="32", choices=["64", "32", "16", "bf16"])
-    parser.add_argument("--num_nodes", default=1, type=int)
-    parser.add_argument("--devices", default="auto", type=str)
     args = parser.parse_args()
 
     main(args)
