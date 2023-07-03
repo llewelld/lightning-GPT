@@ -1,16 +1,31 @@
+import os
 from argparse import ArgumentParser
 from urllib.request import urlopen
 
 import lightning as L
 import torch
+from lightning.pytorch.utilities import rank_zero_info
 from torch.utils.data import DataLoader
 
 from lightning_gpt import callbacks, data, models
 
+DATASET_URL = "https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt"
+DATASET_FILE = "shakespeare_input.txt"
+
 
 def main(args):
-    with urlopen("https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt") as f:
-        text = f.read()
+    if os.path.exists(DATASET_FILE):
+        with open(DATASET_FILE) as f:
+            rank_zero_info(f"Reading dataset: {DATASET_FILE}")
+            text = f.read()
+    else:
+        with urlopen(DATASET_URL) as f:
+            rank_zero_info(f"Downloading dataset: {DATASET_URL}")
+            text = f.read()
+            text = text.decode(f.headers.get_content_charset() or "utf-8")
+            with open(DATASET_FILE, "w") as f:
+                rank_zero_info(f"Writing dataset: {DATASET_FILE}")
+                f.write(text)
 
     train_dataset = data.CharDataset(text, args.block_size)
 
