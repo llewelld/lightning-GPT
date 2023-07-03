@@ -1,5 +1,5 @@
 import os
-from argparse import ArgumentParser
+from argparse import ArgumentParser, BooleanOptionalAction
 from urllib.request import urlopen
 
 import lightning as L
@@ -95,30 +95,31 @@ def main(args):
         torch.set_float32_matmul_precision("high")
         callback_list.append(callbacks.CUDAMetricsCallback())
 
-    trainer = L.Trainer.from_argparse_args(
-        args,
-        max_epochs=10,
+    trainer = L.Trainer(
+        max_epochs=args.max_epochs,
         gradient_clip_val=1.0,
         callbacks=callback_list,
-        accelerator="auto",
-        devices="auto",
-        precision=16,
+        accelerator=args.accelerator,
+        devices=args.devices,
+        precision=args.precision,
+        enable_progress_bar=args.enable_progress_bar,
+        strategy=args.strategy,
     )
 
     trainer.fit(model, train_loader)
 
-    model.eval()
-    context = "Friends of my soul"  # Prime with something
-    x = train_dataset.to_tokens(context, model.device)
-    y = model.generate(x, max_new_tokens=1000, temperature=1.0, top_k=10)[0]
-    rank_zero_info(train_dataset.from_tokens(y))
+    if (args.eval is None) or args.eval:
+        model.eval()
+        context = "Friends of my soul"  # Prime with something
+        x = train_dataset.to_tokens(context, model.device)
+        y = model.generate(x, max_new_tokens=1000, temperature=1.0, top_k=10)[0]
+        rank_zero_info(train_dataset.from_tokens(y))
 
 
 if __name__ == "__main__":
     L.seed_everything(42)
 
     parser = ArgumentParser()
-    parser = L.Trainer.add_argparse_args(parser)
 
     parser.add_argument("--model_type", default="gpt2", type=str)
     parser.add_argument("--n_layer", type=int)
@@ -128,6 +129,15 @@ if __name__ == "__main__":
     parser.add_argument("--block_size", default=128, type=int)
     parser.add_argument("--batch_size", default=64, type=int)
     parser.add_argument("--num_workers", default=4, type=int)
+
+    parser.add_argument("--precision", default="16-mixed", type=str)
+    parser.add_argument("--strategy", default="auto")
+    parser.add_argument("--max_epochs", default=10, type=int)
+    parser.add_argument("--accelerator", default="gpu")
+    parser.add_argument("--devices", default=1, type=int)
+    parser.add_argument("--enable_progress_bar", action=BooleanOptionalAction)
+    parser.add_argument("--eval", action=BooleanOptionalAction)
+
     parser.add_argument("--compile", default=None, choices=[None, "dynamo"])
     parser.add_argument("--implementation", default="mingpt", choices=["mingpt", "nanogpt"])
     args = parser.parse_args()
