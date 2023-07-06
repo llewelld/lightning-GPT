@@ -6,6 +6,8 @@ import lightning as L
 if TYPE_CHECKING:
     from lightning import LightningModule
 
+from typing import Literal, Union
+
 import torch
 from torch.utils.data import DataLoader
 
@@ -40,18 +42,28 @@ class FSDPMinGPTBench(bench.Bench):
         return model, dataloader
 
     def train(self, model: "LightningModule", dataloader: DataLoader) -> float:
+        assert isinstance(
+            self.precision,
+            type(
+                Union[
+                    Literal[64, 32, 16],
+                    Literal["16-mixed", "bf16-mixed", "32-true", "64-true"],
+                    Literal["64", "32", "16", "bf16"],
+                ]
+            ),
+        )
         trainer = L.Trainer(
             fast_dev_run=True,
             max_epochs=self.max_epochs,
             gradient_clip_val=1.0,
             accelerator="cuda",
             devices="auto",
-            precision=self.precision,
+            precision=self.precision,  # type: ignore
             enable_progress_bar=False,
             enable_model_summary=False,
             enable_checkpointing=False,
             logger=False,
-            replace_sampler_ddp=False,
+            use_distributed_sampler=False,
             strategy="fsdp_native",
         )
 

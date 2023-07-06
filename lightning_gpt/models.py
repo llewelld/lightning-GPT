@@ -230,6 +230,7 @@ class FSDPMinGPT(MinGPT):
         _register_gpt_strategy()
 
     def configure_optimizers(self) -> torch.optim.AdamW:
+        assert isinstance(self.trainer.model, torch.nn.Module)
         return _get_fsdp_optimizers(
             self.trainer.model,
             weight_decay=self.mingpt_trainer_config.weight_decay,
@@ -274,6 +275,7 @@ class FSDPNanoGPT(NanoGPT):
         _register_gpt_strategy()
 
     def configure_optimizers(self) -> torch.optim.AdamW:
+        assert isinstance(self.trainer.model, torch.nn.Module)
         return _get_fsdp_optimizers(
             self.trainer.model,
             weight_decay=self.nanogpt_trainer_config.weight_decay,
