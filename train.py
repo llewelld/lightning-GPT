@@ -9,26 +9,10 @@ from torch.utils.data import DataLoader
 
 from lightning_gpt import callbacks, data, models
 
-
-FILENAME = "shakespeare_input.txt"
-URL = f"https://cs.stanford.edu/people/karpathy/char-rnn/{FILENAME}"
-
+DATASET_FILES = "../../../datasets/pile/generated/text{:03}.dat"
 
 def main(args):
-
-    try:
-        if os.path.exists(FILENAME):
-            with open(FILENAME, "r") as f:
-                text = f.read()
-        else:
-            with urlopen(URL) as f:
-                text = f.read()
-    except URLError as e:
-        print(f"Unable to retrieve file from the URL: {URL}. Error: {e}")
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-
-    train_dataset = data.CharDataset(text, args.block_size)
+    train_dataset = data.CharDataset(DATASET_FILES, args.block_size)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
