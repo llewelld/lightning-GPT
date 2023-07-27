@@ -8,6 +8,9 @@ import torch
 from lightning.pytorch.utilities import rank_zero_info
 from torch.utils.data import Dataset
 
+# Restrict the data to a given maximum size
+# Set to None for no maximum
+MAX_DATA = 4573338
 
 class CharDataset(Dataset):
     alphabet_file = '../../../datasets/pile/alphabet.bin'
@@ -104,6 +107,11 @@ class CharDataset(Dataset):
 
         rank_zero_info('Number of files found: {}'.format(found))
         rank_zero_info('Total number of blocks: {}'.format(self.blocks))
+
+        if MAX_DATA and (self.blocks * self.block_size > MAX_DATA):
+            self.blocks = MAX_DATA // self.block_size
+            rank_zero_info('Restricted to bytes: {}'.format(MAX_DATA))
+            rank_zero_info('Adjusted number of blocks: {}'.format(self.blocks))
 
         # We can't open the files until processing has started
         self.file_handles = [None] * found
