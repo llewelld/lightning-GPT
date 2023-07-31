@@ -34,6 +34,7 @@ class CharDataset(Dataset):
     blocks = 0
     file_handles = []
     file_size = 0
+    blocks_per_file = 0
     vocab_size = 0
 
     def input_alphabet(self, file_in):
@@ -91,6 +92,7 @@ class CharDataset(Dataset):
                     if self.file_size == 0:
                         assert size % self.block_size == 0
                         self.file_size = size
+                        self.blocks_per_file = size // self.block_size
                     self.blocks += size // self.block_size
                     if size < self.file_size:
                         if size == 0:
@@ -113,13 +115,13 @@ class CharDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         # Grab a block from one of the files
-        file_count = idx // self.file_size
-        block_count = idx % self.file_size
+        file_count = idx // self.blocks_per_file
+        block_count = idx % self.blocks_per_file
         assert idx < self.blocks
 
         # Open the file if it isn't already and keep hold of the handle
         if self.file_handles[file_count] == None:
-           self.file_handles[file_count] = open(self.files_in.format(file_count), 'rb') 
+            self.file_handles[file_count] = open(self.files_in.format(file_count), 'rb')
 
         self.file_handles[file_count].seek(self.block_size * block_count, os.SEEK_SET)
         data = self.file_handles[file_count].read(self.block_size)
