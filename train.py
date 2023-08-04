@@ -39,7 +39,7 @@ def main(args):
     else:
         raise ValueError(f"Unsupported implementation {args.implementation}")
 
-    if args.strategy.startswith("deepspeed"):
+    if args.strategy == "deepspeed":
         if GPT_class == models.MinGPT:
             GPT_class = models.DeepSpeedMinGPT
         elif GPT_class == models.NanoGPT:
@@ -83,14 +83,12 @@ def main(args):
         torch.set_float32_matmul_precision("high")
         callback_list.append(callbacks.CUDAMetricsCallback())
 
-    trainer = L.Trainer(
-        accelerator=args.accelerator,
-        devices=args.devices,
-        strategy=args.strategy,
-        precision=args.precision,
-        max_epochs=args.max_epochs,
+    trainer = L.Trainer.from_argparse_args(
+        args,
+        max_epochs=10,
         gradient_clip_val=1.0,
         callbacks=callback_list,
+        accelerator="auto",
     )
 
     trainer.fit(model, train_loader)
@@ -105,6 +103,7 @@ if __name__ == "__main__":
     L.seed_everything(42)
 
     parser = ArgumentParser()
+    parser = L.Trainer.add_argparse_args(parser)
 
     parser.add_argument("--model_type", default="gpt2", type=str)
     parser.add_argument("--n_layer", type=int)
@@ -116,14 +115,6 @@ if __name__ == "__main__":
     parser.add_argument("--num_workers", default=4, type=int)
     parser.add_argument("--compile", default=None, choices=[None, "dynamo"])
     parser.add_argument("--implementation", default="mingpt", choices=["mingpt", "nanogpt"])
-    parser.add_argument("--strategy", default="deepspeed_stage_3", choices=["deepspeed", "deepspeed_stage_3", "fsdp_native"])
-    parser.add_argument("--precision", default=16, choices=[16, 32], type=int)
-    parser.add_argument("--num_nodes", default=1, type=int)
-    parser.add_argument("--devices", default="auto", type=str)
-    parser.add_argument("--accelerator", default="auto", type=str)
-    parser.add_argument("--logger", default=True, type=bool)
-    parser.add_argument("--max_epochs", default=10, type=int)
-    
     args = parser.parse_args()
 
     main(args)
