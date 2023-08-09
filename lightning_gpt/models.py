@@ -1,6 +1,6 @@
 import functools
 import warnings
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Union
 
 import torch.optim
 from lightning import LightningModule
@@ -280,6 +280,16 @@ class FSDPNanoGPT(NanoGPT):
             learning_rate=self.nanogpt_trainer_config.learning_rate,
             betas=self.nanogpt_trainer_config.betas,
         )
+    
+    def configure_gradient_clipping(
+            self,
+            optimizer,
+            optimizer_idx: int,
+            gradient_clip_val: Optional[Union[int, float]] = None,
+            gradient_clip_algorithm: Optional[str] = None,
+    ):
+        assert gradient_clip_algorithm in ('norm', None), gradient_clip_algorithm
+        self.trainer.model.clip_grad_norm_(gradient_clip_val)
 
 
 def _register_gpt_strategy() -> None:
