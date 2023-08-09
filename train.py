@@ -55,7 +55,7 @@ def main(args):
     else:
         raise ValueError(f"Unsupported implementation {args.implementation}")
 
-    if args.strategy == "deepspeed":
+    if args.strategy.startswith("deepspeed"):
         if GPT_class == models.MinGPT:
             GPT_class = models.DeepSpeedMinGPT
         elif GPT_class == models.NanoGPT:
