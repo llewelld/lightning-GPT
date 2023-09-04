@@ -237,6 +237,16 @@ class FSDPMinGPT(MinGPT):
             betas=self.mingpt_trainer_config.betas,
         )
 
+    def configure_gradient_clipping(
+            self,
+            optimizer,
+            optimizer_idx: int,
+            gradient_clip_val: Optional[Union[int, float]] = None,
+            gradient_clip_algorithm: Optional[str] = None,
+    ):
+        assert gradient_clip_algorithm in ('norm', None), gradient_clip_algorithm
+        self.trainer.model.clip_grad_norm_(gradient_clip_val)
+
 
 class DeepSpeedNanoGPT(NanoGPT):
     # TODO: activation checkpointing (requires overriding forward)
