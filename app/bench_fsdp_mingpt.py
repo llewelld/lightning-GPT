@@ -6,8 +6,6 @@ import lightning as L
 if TYPE_CHECKING:
     from lightning import LightningModule
 
-from typing import Literal, Union
-
 import torch
 from torch.utils.data import DataLoader
 
