@@ -57,4 +57,4 @@ jobs:
       # 5. ~/.config/mypy/config
       # 6. ~/.mypy.ini
       # https://mypy.readthedocs.io/en/stable/config_file.html
-      run: mypy lightning_gpt
+      run: mypy lightning_gpt/ --pretty
