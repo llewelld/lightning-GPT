@@ -17,13 +17,12 @@ order_by_type = "False"
 
 [tool.mypy]
 files = [
-    "lightning_gpt/*.py",
-    "app/*.py",
+    "lightning_gpt/"
 ]
 # This section is for folders with "-" as they are not valid python modules
 exclude = [
-    "mingpt/*.py",
-    "nanogpt/*.py"
+    '^mingpt/',
+    '^nanogpt/'
 ]
 install_types = "True"
 non_interactive = "True"

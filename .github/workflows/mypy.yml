@@ -45,7 +45,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -e '.[test]' --extra-index-url https://download.pytorch.org/whl/cpu/torch_stable.html
-        pip install mypy==1.5.0 types-setuptools # don't use --upgrade to respect the version installed via setup.py
+        pip install mypy==1.5.0  # don't use --upgrade to respect the version installed via setup.py
         pip list
 
     - name: Check typing
@@ -57,4 +57,4 @@ jobs:
       # 5. ~/.config/mypy/config
       # 6. ~/.mypy.ini
       # https://mypy.readthedocs.io/en/stable/config_file.html
-      run: mypy lightning_gpt/ --pretty
+      run: mypy
