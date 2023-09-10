@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Tuple
+from typing import Any, Tuple, TYPE_CHECKING
 from urllib.request import urlopen
 
 import lightning as L
