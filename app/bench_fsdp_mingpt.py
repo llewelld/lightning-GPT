@@ -42,16 +42,7 @@ class FSDPMinGPTBench(bench.Bench):
         return model, dataloader
 
     def train(self, model: "LightningModule", dataloader: DataLoader) -> float:
-        assert isinstance(
-            self.precision,
-            type(
-                Union[
-                    Literal[64, 32, 16],
-                    Literal["16-mixed", "bf16-mixed", "32-true", "64-true"],
-                    Literal["64", "32", "16", "bf16"],
-                ]
-            ),
-        )
+        self._check_precision()
         trainer = L.Trainer(
             fast_dev_run=True,
             max_epochs=self.max_epochs,

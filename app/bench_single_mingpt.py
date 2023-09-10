@@ -48,16 +48,7 @@ class GPTBench(bench.Bench):
         model: "LightningModule",
         dataloader: torch.utils.data.DataLoader,
     ) -> Optional[float]:
-        assert isinstance(
-            self.precision,
-            type(
-                Union[
-                    Literal[64, 32, 16],
-                    Literal["16-mixed", "bf16-mixed", "32-true", "64-true"],
-                    Literal["64", "32", "16", "bf16"],
-                ]
-            ),
-        )
+        self._check_precision()
         trainer = L.Trainer(
             max_epochs=self.max_epochs,
             gradient_clip_val=1.0,
