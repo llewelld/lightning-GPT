@@ -22,9 +22,6 @@ jobs:
     steps:
     - name: Checkout 🛎️
       uses: actions/checkout@v3
-      with:
-        submodules: recursive
-
     - name: Set up Python 🐍 3.9
       uses: actions/setup-python@v4
       with:
@@ -33,7 +30,6 @@ jobs:
     - name: Get pip cache dir
       id: pip-cache
       run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
-
     - name: pip cache
       uses: actions/cache@v3
       with:
