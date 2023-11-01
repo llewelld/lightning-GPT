@@ -2,8 +2,8 @@ import os
 from argparse import ArgumentParser, BooleanOptionalAction
 from urllib.request import urlopen
 
-import lightning as L
 import torch
+from lightning import Trainer, seed_everything
 from lightning.pytorch.utilities import rank_zero_info
 from torch.utils.data import DataLoader
 
@@ -98,7 +98,7 @@ def main(args):
         torch.set_float32_matmul_precision("high")
         callback_list.append(callbacks.CUDAMetricsCallback())
 
-    trainer = L.Trainer(
+    trainer = Trainer(
         max_epochs=args.max_epochs,
         gradient_clip_val=1.0,
         callbacks=callback_list,
@@ -120,7 +120,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    L.seed_everything(42)
+    seed_everything(42)
 
     parser = ArgumentParser()
 

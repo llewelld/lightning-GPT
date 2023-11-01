@@ -1,9 +1,9 @@
 from typing import Any, Optional, Tuple
 from urllib.request import urlopen
 
-import lightning as L
 import torch
 import torch._dynamo
+from lightning.app import CloudCompute, LightningApp
 
 import mingpt.model
 from lightning_gpt import bench, data, models
@@ -65,7 +65,7 @@ class GPTBench(bench.Bench):
         self.run_benchmark("compile", self.train, args=(model, dataloader), num_runs=self.num_runs)
 
 
-app = L.LightningApp(GPTBench(cloud_compute=L.CloudCompute("gpu-fast")))
+app = LightningApp(GPTBench(cloud_compute=CloudCompute("gpu-fast")))
 
 # app = L.LightningApp(
 #     bench.BenchRun(

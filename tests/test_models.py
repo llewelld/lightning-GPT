@@ -1,6 +1,6 @@
-import lightning as L
 import pytest
 import torch
+from lightning import Trainer
 
 import mingpt
 import nanogpt
@@ -84,7 +84,7 @@ def _get_minimal_gpt_config():
     ],
 )
 def test_model_instatiation_base_strategy(tmpdir, model_cls):
-    trainer = L.pytorch.Trainer(
+    trainer = Trainer(
         limit_train_batches=2,
         limit_val_batches=2,
         max_epochs=1,

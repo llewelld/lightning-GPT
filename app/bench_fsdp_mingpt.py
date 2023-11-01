@@ -1,12 +1,9 @@
-from typing import TYPE_CHECKING, Any, Tuple
+from typing import Any, Tuple
 from urllib.request import urlopen
 
-import lightning as L
-
-if TYPE_CHECKING:
-    from lightning import LightningModule
-
 import torch
+from lightning import LightningModule, Trainer
+from lightning.app import CloudCompute, LightningApp
 from torch.utils.data import DataLoader
 
 from lightning_gpt import bench, data, models
@@ -25,8 +22,8 @@ class FSDPMinGPTBench(bench.Bench):
     def create(self) -> Tuple[models.FSDPMinGPT, DataLoader]:
         torch.set_float32_matmul_precision("high")
 
-        with urlopen("https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt") as f:
-            text = f.read()
+        with urlopen("https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt") as fo:
+            text = fo.read()
 
         dataset = data.CharDataset(text, block_size=128)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers)
@@ -39,9 +36,9 @@ class FSDPMinGPTBench(bench.Bench):
 
         return model, dataloader
 
-    def train(self, model: "LightningModule", dataloader: DataLoader) -> float:
+    def train(self, model: LightningModule, dataloader: DataLoader) -> float:
         self._check_precision()
-        trainer = L.Trainer(
+        trainer = Trainer(
             fast_dev_run=True,
             max_epochs=self.max_epochs,
             gradient_clip_val=1.0,
@@ -71,10 +68,10 @@ class FSDPMinGPTBench(bench.Bench):
         self.run_benchmark("compile", self.train, args=(model, dataloader), num_runs=self.num_runs)
 
 
-app = L.LightningApp(
+app = LightningApp(
     bench.BenchRun(
         FSDPMinGPTBench,
         num_nodes=2,
-        cloud_compute=L.CloudCompute("gpu-fast"),
+        cloud_compute=CloudCompute("gpu-fast"),
     )
 )
