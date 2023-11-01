@@ -1,8 +1,8 @@
 from argparse import ArgumentParser
 from urllib.request import urlopen
 
-import lightning as L
 import torch
+from lightning import Trainer, seed_everything
 from torch.utils.data import DataLoader
 
 from lightning_gpt import callbacks, data, models
@@ -80,7 +80,7 @@ def main(args):
         torch.set_float32_matmul_precision("high")
         callback_list.append(callbacks.CUDAMetricsCallback())
 
-    trainer = L.Trainer.from_argparse_args(
+    trainer = Trainer.from_argparse_args(
         args,
         max_epochs=10,
         gradient_clip_val=1.0,
@@ -99,10 +99,10 @@ def main(args):
 
 
 if __name__ == "__main__":
-    L.seed_everything(42)
+    seed_everything(42)
 
     parser = ArgumentParser()
-    parser = L.Trainer.add_argparse_args(parser)
+    parser = Trainer.add_argparse_args(parser)
 
     parser.add_argument("--model_type", default="gpt2", type=str)
     parser.add_argument("--n_layer", type=int)

@@ -1,13 +1,10 @@
-from typing import TYPE_CHECKING, Any, Optional, Tuple
+from typing import Any, Optional, Tuple
 from urllib.request import urlopen
-
-import lightning as L
-
-if TYPE_CHECKING:
-    from lightning import LightningModule
 
 import torch
 import torch._dynamo
+from lightning import LightningModule, Trainer
+from lightning.app import CloudCompute, LightningApp
 from torch.utils.data import DataLoader
 
 from lightning_gpt import bench, data, models
@@ -43,11 +40,11 @@ class GPTBench(bench.Bench):
 
     def train(
         self,
-        model: "LightningModule",
+        model: LightningModule,
         dataloader: torch.utils.data.DataLoader,
     ) -> Optional[float]:
         self._check_precision()
-        trainer = L.Trainer(
+        trainer = Trainer(
             max_epochs=self.max_epochs,
             gradient_clip_val=1.0,
             accelerator="cuda",
@@ -77,4 +74,4 @@ class GPTBench(bench.Bench):
         self.run_benchmark("compile", self.train, args=(model, dataloader), num_runs=self.num_runs)
 
 
-app = L.LightningApp(GPTBench(cloud_compute=L.CloudCompute("gpu-fast")))
+app = LightningApp(GPTBench(cloud_compute=CloudCompute("gpu-fast")))

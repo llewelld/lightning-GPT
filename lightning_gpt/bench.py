@@ -3,7 +3,7 @@ import time
 from typing import Any, Callable, Dict, Iterable, List, Optional, Type, Union
 
 import torch
-from lightning import CloudCompute, LightningFlow, LightningWork
+from lightning.app import CloudCompute, LightningFlow, LightningWork
 from lightning.app.components import LightningTrainerMultiNode
 
 
