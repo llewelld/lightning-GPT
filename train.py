@@ -85,7 +85,6 @@ def main(args):
 
     trainer = L.Trainer.from_argparse_args(
         args,
-        max_epochs=10,
         gradient_clip_val=1.0,
         callbacks=callback_list,
         accelerator="auto",
@@ -93,10 +92,10 @@ def main(args):
 
     trainer.fit(model, train_loader)
 
-    context = "Friends of my soul"  # Prime with something
-    x = train_dataset.to_tokens(context, model.device)
-    y = model.generate(x, max_new_tokens=1000, temperature=1.0, do_sample=True, top_k=10)
-    print(train_dataset.from_tokens(y))
+    #context = "Friends of my soul"  # Prime with something
+    #x = train_dataset.to_tokens(context, model.device)
+    #y = model.generate(x, max_new_tokens=1000, temperature=1.0, do_sample=True, top_k=10)
+    #print(train_dataset.from_tokens(y))
 
 
 if __name__ == "__main__":

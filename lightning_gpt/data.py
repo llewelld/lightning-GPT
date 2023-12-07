@@ -10,7 +10,9 @@ from torch.utils.data import Dataset
 
 # Restrict the data to a given maximum size
 # Set to None for no maximum
-MAX_DATA = 4573338
+MAX_DATA = 4573338 # Shakespeare
+#MAX_DATA = int(4.5 * 1024 * 1024 * 1024) # 4.5 GB
+#MAX_DATA = int(45 * 1024 * 1024 * 1024) # 45 GB
 
 class CharDataset(Dataset):
     alphabet_file = '../../../datasets/pile/alphabet.bin'
