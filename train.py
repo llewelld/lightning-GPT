@@ -7,8 +7,12 @@ import lightning as L
 import torch
 from torch.utils.data import DataLoader
 
+# Import intel_extension_for_pytorch
+import intel_extension_for_pytorch as ipex
+
 from lightning_gpt import callbacks, data, models
 
+from xpuaccelerator import XPUAccelerator
 
 FILENAME = "shakespeare_input.txt"
 URL = f"https://cs.stanford.edu/people/karpathy/char-rnn/{FILENAME}"
@@ -99,12 +103,14 @@ def main(args):
         torch.set_float32_matmul_precision("high")
         callback_list.append(callbacks.CUDAMetricsCallback())
 
+    accelerator = XPUAccelerator()
+
     trainer = L.Trainer.from_argparse_args(
         args,
         max_epochs=10,
         gradient_clip_val=1.0,
         callbacks=callback_list,
-        accelerator="auto",
+        accelerator=accelerator,
     )
 
     trainer.fit(model, train_loader)
