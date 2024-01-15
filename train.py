@@ -13,6 +13,9 @@ import intel_extension_for_pytorch as ipex
 from lightning_gpt import callbacks, data, models
 
 from xpuaccelerator import XPUAccelerator
+#from torch.distributed import init_process_group, destroy_process_group
+import oneccl_bindings_for_pytorch
+from lightning.pytorch.strategies import DDPStrategy
 
 FILENAME = "shakespeare_input.txt"
 URL = f"https://cs.stanford.edu/people/karpathy/char-rnn/{FILENAME}"
@@ -31,6 +34,8 @@ def main(args):
         print(f"Unable to retrieve file from the URL: {URL}. Error: {e}")
     except Exception as e:
         print(f"Unexpected error: {e}")
+
+    #init_process_group(backend='ccl')
 
     train_dataset = data.CharDataset(text, args.block_size)
 
@@ -105,12 +110,17 @@ def main(args):
 
     accelerator = XPUAccelerator()
 
+    #torch.xpu.set_fp32_math_mode(mode=torch.xpu.FP32MathMode.FP32, device='xpu')
+    ddp = DDPStrategy(process_group_backend="ccl")
+
     trainer = L.Trainer.from_argparse_args(
         args,
-        max_epochs=10,
+        max_epochs=2,
         gradient_clip_val=1.0,
         callbacks=callback_list,
         accelerator=accelerator,
+        #accelerator="xpu",
+        strategy=ddp,
     )
 
     trainer.fit(model, train_loader)
@@ -120,6 +130,7 @@ def main(args):
     y = model.generate(x, max_new_tokens=1000, temperature=1.0, do_sample=True, top_k=10)
     print(train_dataset.from_tokens(y))
 
+    #destroy_process_group()
 
 if __name__ == "__main__":
     L.seed_everything(42)
