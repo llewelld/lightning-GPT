@@ -109,14 +109,17 @@ def main(args):
         torch.set_float32_matmul_precision("high")
         callback_list.append(callbacks.CUDAMetricsCallback())
 
+    if torch.xpu.is_available():
+        ipex.set_fp32_math_mode(mode=ipex.FP32MathMode.FP32, device='xpu')
+        torch.set_float32_matmul_precision("high")
+        callback_list.append(callbacks.XPUMetricsCallback())
+
     accelerator = XPUAccelerator()
 
-    #torch.xpu.set_fp32_math_mode(mode=torch.xpu.FP32MathMode.FP32, device='xpu')
     ddp = DDPStrategy(process_group_backend="ccl")
 
     trainer = L.Trainer.from_argparse_args(
         args,
-        max_epochs=2,
         gradient_clip_val=1.0,
         callbacks=callback_list,
         accelerator=accelerator,
