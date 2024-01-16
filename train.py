@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 import intel_extension_for_pytorch as ipex
 
 from lightning_gpt import callbacks, data, models
+from lightning.pytorch.utilities import rank_zero_info
 
 from xpuaccelerator import XPUAccelerator
 #from torch.distributed import init_process_group, destroy_process_group
@@ -127,8 +128,8 @@ def main(args):
 
     context = "Friends of my soul"  # Prime with something
     x = train_dataset.to_tokens(context, model.device)
-    y = model.generate(x, max_new_tokens=1000, temperature=1.0, do_sample=True, top_k=10)
-    print(train_dataset.from_tokens(y))
+    y = model.generate(x, max_new_tokens=1000, temperature=1.0, top_k=10)[0]
+    rank_zero_info(train_dataset.from_tokens(y))
 
     #destroy_process_group()
 
