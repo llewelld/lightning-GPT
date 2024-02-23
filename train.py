@@ -1,4 +1,10 @@
 import os
+
+local_rank = int(os.environ["MPI_LOCALRANKID"])
+
+os.environ["SLURM_PROCID"] = os.environ["PMI_RANK"]
+os.environ["ZE_AFFINITY_MASK"] = str(local_rank)
+
 from argparse import ArgumentParser
 from urllib.request import urlopen
 from urllib.error import URLError
@@ -82,6 +88,13 @@ def main(args):
         else:
             raise ValueError(f"Implementation {args.implementation} not supported with FSDP")
 
+    callback_list = []
+
+    if torch.xpu.is_available():
+        ipex.set_fp32_math_mode(mode=ipex.FP32MathMode.FP32, device='xpu')
+        torch.set_float32_matmul_precision("high")
+        callback_list.append(callbacks.XPUMetricsCallback())
+
     model = GPT_class(
         vocab_size=train_dataset.vocab_size,
         block_size=train_dataset.block_size,
@@ -103,36 +116,30 @@ def main(args):
             )
         model = torch.compile(model)
 
-    callback_list = []
-
     if torch.cuda.is_available():
         torch.set_float32_matmul_precision("high")
         callback_list.append(callbacks.CUDAMetricsCallback())
 
-    if torch.xpu.is_available():
-        ipex.set_fp32_math_mode(mode=ipex.FP32MathMode.FP32, device='xpu')
-        torch.set_float32_matmul_precision("high")
-        callback_list.append(callbacks.XPUMetricsCallback())
-
     accelerator = XPUAccelerator()
 
-    ddp = DDPStrategy(process_group_backend="ccl")
+    ddp = DDPStrategy(accelerator=accelerator, process_group_backend="ccl")
 
     trainer = L.Trainer.from_argparse_args(
         args,
         gradient_clip_val=1.0,
         callbacks=callback_list,
-        accelerator=accelerator,
         #accelerator="xpu",
         strategy=ddp,
+        enable_checkpointing=False,
     )
 
     trainer.fit(model, train_loader)
 
-    context = "Friends of my soul"  # Prime with something
-    x = train_dataset.to_tokens(context, model.device)
-    y = model.generate(x, max_new_tokens=1000, temperature=1.0, top_k=10)[0]
-    rank_zero_info(train_dataset.from_tokens(y))
+    if False:
+        context = "Friends of my soul"  # Prime with something
+        x = train_dataset.to_tokens(context, model.device)
+        y = model.generate(x, max_new_tokens=1000, temperature=1.0, top_k=10)[0]
+        rank_zero_info(train_dataset.from_tokens(y))
 
     #destroy_process_group()
 
