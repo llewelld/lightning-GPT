@@ -1,9 +1,24 @@
 import os
 
+# MPI_LOCALRANKID
+# Local sequential index of the process on the node
+# See nowhere
 local_rank = int(os.environ["MPI_LOCALRANKID"])
 
+# PMI_RANK
+# The relative process ID of the current process with mpirun
+# See https://doku.lrz.de/job-farming-with-slurm-11481293.html#JobfarmingwithSLURM-Taskidentifier
+# See https://github.com/intel/torch-ccl?tab=readme-ov-file#usage
 os.environ["SLURM_PROCID"] = os.environ["PMI_RANK"]
 os.environ["ZE_AFFINITY_MASK"] = str(local_rank)
+
+# ZE_AFFINITY_MASK
+# List of devices we want the process to see
+# See https://www.intel.com/content/www/us/en/developer/articles/technical/flattening-gpu-tile-hierarchy.html
+os.environ["ZE_FLAT_DEVICE_HIERARCHY"] = "FLAT"
+#os.environ["SLURM_LOCALID"] = str(local_rank)
+print("MPI: local_rank: {}".format(local_rank))
+print("MPI: procid: {}".format(os.environ["SLURM_PROCID"]))
 
 from argparse import ArgumentParser
 from urllib.request import urlopen
@@ -26,7 +41,6 @@ from lightning.pytorch.strategies import DDPStrategy
 
 FILENAME = "shakespeare_input.txt"
 URL = f"https://cs.stanford.edu/people/karpathy/char-rnn/{FILENAME}"
-
 
 def main(args):
 
@@ -123,6 +137,9 @@ def main(args):
     accelerator = XPUAccelerator()
 
     ddp = DDPStrategy(accelerator=accelerator, process_group_backend="ccl")
+    print("MPI: device count: {}".format(torch.xpu.device_count()))
+    print("MPI: device available: {}".format(torch.xpu.is_available()))
+    print("MPI: current device: {}".format(torch.xpu.current_device()))
 
     trainer = L.Trainer.from_argparse_args(
         args,
