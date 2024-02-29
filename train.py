@@ -1,5 +1,8 @@
 import os
 
+os.environ["WORLD_SIZE"] = "4"
+os.environ["PMI_SIZE"] = "4"
+
 # MPI_LOCALRANKID
 # Local sequential index of the process on the node
 # See nowhere
@@ -9,6 +12,26 @@ local_rank = int(os.environ["MPI_LOCALRANKID"])
 # The relative process ID of the current process with mpirun
 # See https://doku.lrz.de/job-farming-with-slurm-11481293.html#JobfarmingwithSLURM-Taskidentifier
 # See https://github.com/intel/torch-ccl?tab=readme-ov-file#usage
+global_rank = int(os.environ["PMI_RANK"])
+
+# PMI_SIZE
+world_size = int(os.environ["PMI_SIZE"])
+
+# LOCAL_WORLD_SIZE
+local_world_size = int(os.environ["LOCAL_WORLD_SIZE"])
+
+#os.environ["RANK"] = int(local_rank)
+#os.environ["LOCAL_RANK"] = int(local_rank)
+#os.environ["MPI_LOCALRANKID"] = int(local_rank)
+#os.environ["PMI_RANK"] = int(local_rank)
+#os.environ["SLURM_PROCID"] = int(local_rank)
+#os.environ["ZE_AFFINITY_MASK"] = int(local_rank)
+#os.environ["GLOBAL_RANK"] = int(global_rank)
+#os.environ["CCL_LOCAL_RANK"] = int(local_rank)
+#os.environ["LOCAL_WORLD_SIZE"] = int(local_world_size)
+#os.environ["CCL_LOCAL_SIZE"] = int(local_world_size)
+#os.environ["MPI_LOCALNRANKS"] = int(local_world_size)
+
 os.environ["SLURM_PROCID"] = os.environ["PMI_RANK"]
 os.environ["ZE_AFFINITY_MASK"] = str(local_rank)
 
@@ -35,7 +58,7 @@ from lightning_gpt import callbacks, data, models
 from lightning.pytorch.utilities import rank_zero_info
 
 from xpuaccelerator import XPUAccelerator
-#from torch.distributed import init_process_group, destroy_process_group
+from torch.distributed import init_process_group, destroy_process_group
 import oneccl_bindings_for_pytorch
 from lightning.pytorch.strategies import DDPStrategy
 
@@ -56,7 +79,10 @@ def main(args):
     except Exception as e:
         print(f"Unexpected error: {e}")
 
-    #init_process_group(backend='ccl')
+    init_process_group(backend='ccl')
+    print("MPI: world size: {}".format(torch.distributed.get_world_size()))
+    print("MPI: rank: {}".format(torch.distributed.get_rank()))
+
 
     train_dataset = data.CharDataset(text, args.block_size)
 
