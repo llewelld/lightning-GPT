@@ -1,7 +1,7 @@
 import os
 
-os.environ["WORLD_SIZE"] = "4"
-os.environ["PMI_SIZE"] = "4"
+#os.environ["WORLD_SIZE"] = "4"
+os.environ["PMI_SIZE"] = "16"
 
 # MPI_LOCALRANKID
 # Local sequential index of the process on the node
@@ -20,25 +20,31 @@ world_size = int(os.environ["PMI_SIZE"])
 # LOCAL_WORLD_SIZE
 local_world_size = int(os.environ["LOCAL_WORLD_SIZE"])
 
-#os.environ["RANK"] = int(local_rank)
-#os.environ["LOCAL_RANK"] = int(local_rank)
-#os.environ["MPI_LOCALRANKID"] = int(local_rank)
-#os.environ["PMI_RANK"] = int(local_rank)
-#os.environ["SLURM_PROCID"] = int(local_rank)
-#os.environ["ZE_AFFINITY_MASK"] = int(local_rank)
-#os.environ["GLOBAL_RANK"] = int(global_rank)
-#os.environ["CCL_LOCAL_RANK"] = int(local_rank)
-#os.environ["LOCAL_WORLD_SIZE"] = int(local_world_size)
-#os.environ["CCL_LOCAL_SIZE"] = int(local_world_size)
-#os.environ["MPI_LOCALNRANKS"] = int(local_world_size)
+os.environ["RANK"] = str(global_rank)
+os.environ["LOCAL_RANK"] = str(local_rank)
+os.environ["MPI_LOCALRANKID"] = str(local_rank)
+#os.environ["PMI_RANK"] = str(local_rank)
+#os.environ["SLURM_PROCID"] = str(local_rank)
+os.environ["GLOBAL_RANK"] = str(global_rank)
+os.environ["CCL_LOCAL_RANK"] = str(local_rank)
+os.environ["LOCAL_WORLD_SIZE"] = str(local_world_size)
+os.environ["CCL_LOCAL_SIZE"] = str(local_world_size)
+os.environ["MPI_LOCALNRANKS"] = str(local_world_size)
+os.environ["WORLD_SIZE"] = str(world_size)
 
 os.environ["SLURM_PROCID"] = os.environ["PMI_RANK"]
-os.environ["ZE_AFFINITY_MASK"] = str(local_rank)
+if local_rank % 2 == 0:
+    os.environ["ZE_AFFINITY_MASK"] = str(local_rank // 2)+".0"
+else:
+    os.environ["ZE_AFFINITY_MASK"] = str(local_rank // 2)+".1"
 
 # ZE_AFFINITY_MASK
 # List of devices we want the process to see
 # See https://www.intel.com/content/www/us/en/developer/articles/technical/flattening-gpu-tile-hierarchy.html
 os.environ["ZE_FLAT_DEVICE_HIERARCHY"] = "FLAT"
+
+
+
 #os.environ["SLURM_LOCALID"] = str(local_rank)
 print("MPI: local_rank: {}".format(local_rank))
 print("MPI: procid: {}".format(os.environ["SLURM_PROCID"]))
