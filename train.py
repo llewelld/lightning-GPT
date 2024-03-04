@@ -1,57 +1,10 @@
 import os
-
-#os.environ["WORLD_SIZE"] = "4"
-os.environ["PMI_SIZE"] = "16"
-
-# MPI_LOCALRANKID
-# Local sequential index of the process on the node
-# See nowhere
-local_rank = int(os.environ["MPI_LOCALRANKID"])
-
-# PMI_RANK
-# The relative process ID of the current process with mpirun
-# See https://doku.lrz.de/job-farming-with-slurm-11481293.html#JobfarmingwithSLURM-Taskidentifier
-# See https://github.com/intel/torch-ccl?tab=readme-ov-file#usage
-global_rank = int(os.environ["PMI_RANK"])
-
-# PMI_SIZE
-world_size = int(os.environ["PMI_SIZE"])
-
-# LOCAL_WORLD_SIZE
-local_world_size = int(os.environ["LOCAL_WORLD_SIZE"])
-
-os.environ["RANK"] = str(global_rank)
-os.environ["LOCAL_RANK"] = str(local_rank)
-os.environ["MPI_LOCALRANKID"] = str(local_rank)
-#os.environ["PMI_RANK"] = str(local_rank)
-#os.environ["SLURM_PROCID"] = str(local_rank)
-os.environ["GLOBAL_RANK"] = str(global_rank)
-os.environ["CCL_LOCAL_RANK"] = str(local_rank)
-os.environ["LOCAL_WORLD_SIZE"] = str(local_world_size)
-os.environ["CCL_LOCAL_SIZE"] = str(local_world_size)
-os.environ["MPI_LOCALNRANKS"] = str(local_world_size)
-os.environ["WORLD_SIZE"] = str(world_size)
-
-os.environ["SLURM_PROCID"] = os.environ["PMI_RANK"]
-if local_rank % 2 == 0:
-    os.environ["ZE_AFFINITY_MASK"] = str(local_rank // 2)+".0"
-else:
-    os.environ["ZE_AFFINITY_MASK"] = str(local_rank // 2)+".1"
-
-# ZE_AFFINITY_MASK
-# List of devices we want the process to see
-# See https://www.intel.com/content/www/us/en/developer/articles/technical/flattening-gpu-tile-hierarchy.html
-os.environ["ZE_FLAT_DEVICE_HIERARCHY"] = "FLAT"
-
-
-
-#os.environ["SLURM_LOCALID"] = str(local_rank)
-print("MPI: local_rank: {}".format(local_rank))
-print("MPI: procid: {}".format(os.environ["SLURM_PROCID"]))
-
 from argparse import ArgumentParser
 from urllib.request import urlopen
 from urllib.error import URLError
+
+# XPUAccelerator must be imported before PyTorch or Lightning
+from xpuaccelerator import XPUAccelerator
 
 import lightning as L
 import torch
@@ -63,7 +16,6 @@ import intel_extension_for_pytorch as ipex
 from lightning_gpt import callbacks, data, models
 from lightning.pytorch.utilities import rank_zero_info
 
-from xpuaccelerator import XPUAccelerator
 from torch.distributed import init_process_group, destroy_process_group
 import oneccl_bindings_for_pytorch
 from lightning.pytorch.strategies import DDPStrategy
@@ -72,7 +24,6 @@ FILENAME = "shakespeare_input.txt"
 URL = f"https://cs.stanford.edu/people/karpathy/char-rnn/{FILENAME}"
 
 def main(args):
-
     try:
         if os.path.exists(FILENAME):
             with open(FILENAME, "r") as f:
@@ -86,9 +37,6 @@ def main(args):
         print(f"Unexpected error: {e}")
 
     init_process_group(backend='ccl')
-    print("MPI: world size: {}".format(torch.distributed.get_world_size()))
-    print("MPI: rank: {}".format(torch.distributed.get_rank()))
-
 
     train_dataset = data.CharDataset(text, args.block_size)
 
@@ -169,15 +117,11 @@ def main(args):
     accelerator = XPUAccelerator()
 
     ddp = DDPStrategy(accelerator=accelerator, process_group_backend="ccl")
-    print("MPI: device count: {}".format(torch.xpu.device_count()))
-    print("MPI: device available: {}".format(torch.xpu.is_available()))
-    print("MPI: current device: {}".format(torch.xpu.current_device()))
 
     trainer = L.Trainer.from_argparse_args(
         args,
         gradient_clip_val=1.0,
         callbacks=callback_list,
-        #accelerator="xpu",
         strategy=ddp,
         enable_checkpointing=False,
     )
@@ -189,8 +133,6 @@ def main(args):
         x = train_dataset.to_tokens(context, model.device)
         y = model.generate(x, max_new_tokens=1000, temperature=1.0, top_k=10)[0]
         rank_zero_info(train_dataset.from_tokens(y))
-
-    #destroy_process_group()
 
 if __name__ == "__main__":
     L.seed_everything(42)

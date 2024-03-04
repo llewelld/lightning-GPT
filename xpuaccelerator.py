@@ -1,3 +1,38 @@
+import os
+
+def xpu_setup_environment():
+    # MPI_LOCALRANKID
+    # Local sequential index of the process on the node
+    # See nowhere
+    local_rank = int(os.environ["MPI_LOCALRANKID"])
+
+    # PMI_RANK
+    # The rank of this process within the program (zero-origin)
+    # See https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_13.html#environment
+    # See https://github.com/intel/torch-ccl?tab=readme-ov-file#usage
+    global_rank = int(os.environ["PMI_RANK"])
+
+    # PMI_SIZE
+    # The size of the program (number of ranks)
+    # See https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_13.html#environment
+    # See https://github.com/intel/torch-ccl?tab=readme-ov-file#usage
+    world_size = int(os.environ["PMI_SIZE"])
+
+    os.environ["RANK"] = str(global_rank)
+    os.environ["WORLD_SIZE"] = str(world_size)
+
+    # ZE_FLAT_DEVICE_HIERARCHY
+    # Hierarchy model with which the underlying hardware is exposed
+    # ZE_AFFINITY_MASK
+    # Restrict which devices are visible to the process
+    # See https://spec.oneapi.io/level-zero/latest/core/PROG.html#environment-variables
+    # See https://www.intel.com/content/www/us/en/developer/articles/technical/flattening-gpu-tile-hierarchy.html
+    os.environ["ZE_FLAT_DEVICE_HIERARCHY"] = "COMPOSITE"
+    os.environ["ZE_AFFINITY_MASK"] = str(local_rank // 2) + "." + str(local_rank % 2)
+
+# We must set up the environment before importing any PyTorch code
+xpu_setup_environment()
+
 import torch
 import torchvision
 import intel_extension_for_pytorch as ipex
@@ -15,7 +50,7 @@ class XPUAccelerator(Accelerator):
     def setup_device(self, device: torch.device) -> None:
         if device.type != "xpu":
             raise ValueError(f"Device should be XPU, got {device} instead.")
-        if torch.xpu.get_fp32_math_mode() == torch.xpu.FP32MathMode.FP32:
+        if torch.xpu.get_fp32_math_mode() != torch.xpu.FP32MathMode.FP32:
             rank_zero_info(
                 f"You are using an XPU device ({torch.xpu.get_device_name(device)!r}). To properly utilize computation "
                 "power, you can set `torch.xpu.set_fp32_math_mode(mode=torch.xpu.FP32MathMode.FP32, device='xpu')` "
