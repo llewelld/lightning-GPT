@@ -4,7 +4,7 @@ from urllib.request import urlopen
 from urllib.error import URLError
 
 # XPUAccelerator must be imported before PyTorch or Lightning
-from xpuaccelerator import XPUAccelerator
+import xpuaccelerator as xpu
 
 import lightning as L
 import torch
@@ -85,7 +85,7 @@ def main(args):
     callback_list = []
 
     if torch.xpu.is_available():
-        ipex.set_fp32_math_mode(mode=ipex.FP32MathMode.FP32, device='xpu')
+        ipex.set_fp32_math_mode(mode=ipex.FP32MathMode.BF32, device='xpu')
         torch.set_float32_matmul_precision("high")
         callback_list.append(callbacks.XPUMetricsCallback())
 
@@ -114,21 +114,17 @@ def main(args):
         torch.set_float32_matmul_precision("high")
         callback_list.append(callbacks.CUDAMetricsCallback())
 
-    accelerator = XPUAccelerator()
-
-    ddp = DDPStrategy(accelerator=accelerator, process_group_backend="ccl")
-
-    trainer = L.Trainer.from_argparse_args(
+    trainer = xpu.Trainer.from_argparse_args(
         args,
         gradient_clip_val=1.0,
         callbacks=callback_list,
-        strategy=ddp,
+        strategy="ddp",
         enable_checkpointing=False,
     )
 
     trainer.fit(model, train_loader)
 
-    if False:
+    if True:
         context = "Friends of my soul"  # Prime with something
         x = train_dataset.to_tokens(context, model.device)
         y = model.generate(x, max_new_tokens=1000, temperature=1.0, top_k=10)[0]

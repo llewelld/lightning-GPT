@@ -1,5 +1,6 @@
 import os
 
+# Sets up environment variables needed for MPI with XPU devices
 def xpu_setup_environment():
     # MPI_LOCALRANKID
     # Local sequential index of the process on the node
@@ -38,12 +39,38 @@ import torchvision
 import intel_extension_for_pytorch as ipex
 from typing import Any, MutableSequence, Tuple, Union, Dict, Optional, List
 
-#from lightning.fabric.accelerators.accelerator import Accelerator
+import lightning as L
 from lightning.pytorch.accelerators.accelerator import Accelerator
 from lightning.fabric.utilities.exceptions import MisconfigurationException
 from lightning.fabric.utilities.device_parser import _check_data_type
 from lightning.pytorch.utilities import rank_zero_info
+from lightning.pytorch.strategies import DDPStrategy
+from lightning.pytorch.plugins import MixedPrecisionPlugin
 
+# Custom XPU Trainer class
+class Trainer(L.Trainer):
+    def __init__(self, *args, **kwargs):
+        super(Trainer, self).__init__(*args, **kwargs)
+
+    @staticmethod
+    def from_argparse_args(*args, **kwargs):
+        precision = kwargs.get("precision") or vars(args[0]).get("precision")
+        if precision == "bf16":
+            # Lightning will force the device to "cuda" if we set precision to bf16
+            # So we need to set up our own custom plugin in this case
+            precision = MixedPrecisionPlugin("bf16", "xpu")
+            plugins = kwargs.get("plugins", []) + [precision]
+            kwargs["plugins"] = plugins
+        strategy = kwargs.get("strategy") or vars(args[0]).get("strategy")
+        if strategy == "ddp":
+            # For ddp we need to configure Lightning to use the XPU and CCL backed
+            accelerator = XPUAccelerator()
+            ddp = DDPStrategy(accelerator=accelerator, process_group_backend="ccl")
+            kwargs['strategy'] = ddp
+        # Return a standard Lightning Trainer but using our adjusted configuration
+        return L.Trainer.from_argparse_args(*args, **kwargs)
+
+# Custom XPU Accelerator class
 class XPUAccelerator(Accelerator):
     """Accelerator for Intel XPU devices."""
 
