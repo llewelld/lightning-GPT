@@ -61,6 +61,10 @@ class Trainer(L.Trainer):
             precision = MixedPrecisionPlugin("bf16", "xpu")
             plugins = kwargs.get("plugins", []) + [precision]
             kwargs["plugins"] = plugins
+            ipex.set_fp32_math_mode(mode=ipex.FP32MathMode.BF32, device='xpu')
+        else:
+            ipex.set_fp32_math_mode(mode=ipex.FP32MathMode.FP32, device='xpu')
+
         strategy = kwargs.get("strategy") or vars(args[0]).get("strategy")
         if strategy == "ddp":
             # For ddp we need to configure Lightning to use the XPU and CCL backed

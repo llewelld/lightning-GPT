@@ -85,7 +85,6 @@ def main(args):
     callback_list = []
 
     if torch.xpu.is_available():
-        ipex.set_fp32_math_mode(mode=ipex.FP32MathMode.BF32, device='xpu')
         torch.set_float32_matmul_precision("high")
         callback_list.append(callbacks.XPUMetricsCallback())
 
