@@ -111,9 +111,8 @@ def main(args):
 
     context = "Friends of my soul"  # Prime with something
     x = train_dataset.to_tokens(context, model.device)
-    y = model.generate(x, max_new_tokens=1000, temperature=1.0, do_sample=True, top_k=10)
-    print(train_dataset.from_tokens(y))
-
+    y = model.generate(x, max_new_tokens=1000, temperature=1.0, top_k=10)[0]
+    rank_zero_info(train_dataset.from_tokens(y))
 
 if __name__ == "__main__":
     L.seed_everything(42)
