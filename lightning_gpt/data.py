@@ -14,6 +14,7 @@ class CharDataset(Dataset):
         rank_zero_info("data has %d characters, %d unique." % (data_size, vocab_size))
 
         assert vocab_size < 256, "The vocabulary exceeds byte-size storage"
+        assert vocab_size > 0, "The vocabulary is empty"
 
         self.stoi = {ch: i for i, ch in enumerate(chars)}
         self.itos = {i: ch for i, ch in enumerate(chars)}

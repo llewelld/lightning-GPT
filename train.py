@@ -8,6 +8,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from lightning_gpt import callbacks, data, models
+from lightning.pytorch.utilities import rank_zero_info
 
 
 FILENAME = "shakespeare_input.txt"
@@ -101,9 +102,10 @@ def main(args):
 
     trainer = L.Trainer.from_argparse_args(
         args,
-        max_epochs=10,
+        max_epochs=2,
         gradient_clip_val=1.0,
         callbacks=callback_list,
+        enable_checkpointing=False,
         accelerator="auto",
     )
 
